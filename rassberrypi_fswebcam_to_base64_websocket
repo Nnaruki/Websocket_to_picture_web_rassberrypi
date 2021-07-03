@@ -1,0 +1,59 @@
+import asyncio
+# WebSocketモジュールを宣言する。
+import websockets
+import base64
+import cv2  
+import time
+from PIL import Image
+from io import BytesIO
+import os
+import glob
+
+import compression
+
+
+
+
+# クライアント接続すると呼び出す。
+async def accept(websocket, path):
+  # 無限ループ
+  while True:
+    start = time.time()
+
+    # # クライアントからメッセージを待機する。
+    # data = await websocket.recv()
+    # # コンソールに出力
+    # print("receive : " + data)
+    # # クライアントでechoを付けて再送信する。
+    
+    #Base64でエンコードする画像のパス
+    target_file=r"decode.png"
+    #エンコードした画像の保存先パス
+    encode_file=r"comp_decode.jpg"
+
+
+    capture = cv2.VideoCapture(0)
+
+
+    ret, frame = capture.read()
+    cv2.imwrite('decode.png', frame)
+
+    compression.main()
+
+
+
+    with open(encode_file, 'rb') as f:
+        data = f.read()
+
+    #Base64で画像をエンコード
+    encode=base64.b64encode(data)
+    await websocket.send(str(encode))
+    elapsed_time = time.time() - start
+    print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
+    
+ 
+# WebSocketサーバー生成。ホストはlocalhost、portは9998に生成する。
+start_server = websockets.serve(accept, "192.168.0.31", 8080)
+# 非同期でサーバを待機する。
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()
